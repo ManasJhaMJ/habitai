@@ -32,7 +32,6 @@ function Navbar({ user }) {
             <li><Link to="/">Home</Link></li>
             <li><Link to="/tracker">Tracker</Link></li>
             <li><Link to="/roadmap">Roadmap</Link></li>
-            <li><Link to="/chatbot">Chatbot</Link></li>
             <li><Link to="/leaderboard">Leaderboard</Link></li>
             {/* <li><a href="#">Shop</a></li> */}
           </ul>
