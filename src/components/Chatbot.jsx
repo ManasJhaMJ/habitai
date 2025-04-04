@@ -58,7 +58,7 @@ const Chatbot = () => {
         try {
             const result = await model.generateContent({
                 contents: [
-                    { role: "user", parts: [{ text: `Suggest 3 follow-up questions based on this query: ${userInput} and keep the question very short in length.` }] }
+                    { role: "user", parts: [{ text: `Suggest 3 follow-up questions based on this query: ${userInput} and keep the question very short in length. dont provide anything else like a starting statement. Provide each question in a single line seperated by \n ` }] }
                 ]
             });
 
