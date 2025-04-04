@@ -16,7 +16,7 @@ function Navbar({ user }) {
         <div className="navbar-logo">
         <GiCloakDagger size={50} />
           <span className="logo-text">SOLO</span>
-          <span className="logo-highlight">LEVELER</span>
+          <span className="logo-highlight">LEARNER</span>
         </div>
 
         {/* Mobile Navbar Toggle Button */}

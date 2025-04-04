@@ -4,9 +4,8 @@ import { MessageSquare, XCircle } from "lucide-react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import { GEMINI_API_KEY } from "../geminiConfig";
 
-const API_KEY = GEMINI_API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY;
 
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -20,7 +19,7 @@ const Chatbot = () => {
     ]);
 
     const genAI = new GoogleGenerativeAI(API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const prompt = "You are an expert in habit tracking and task management. Provide informative and concise answers in short. Dont use Markdown.";
 
