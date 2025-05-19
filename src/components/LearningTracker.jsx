@@ -73,7 +73,7 @@ const LearningTracker = ({ user }) => {
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-      const prompt = `As a learning coach, provide brief feedback and 1-2 specific suggestions to improve this skill/habit based on this learning journal entry: "${learningEntry}". Keep your response under 150 words and dont use Markdown.`;
+      const prompt = `As a learning coach, provide brief feedback and 1-2 specific suggestions to improve this skill/habit based on this learning journal entry: "${learningEntry}". Keep your response under 150 words, dont promote bad habits like long term gaming or gambling and dont use Markdown.`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
