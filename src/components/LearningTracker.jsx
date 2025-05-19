@@ -39,7 +39,10 @@ const LearningTracker = ({ user }) => {
   useEffect(() => {
     if (!user) return;
 
+    // Fetch learning entries
     fetchLearningEntries(user.uid, setLearningHistory);
+    
+    // Fetch user stats
     fetchUserStats(user.uid, setUserStats);
 
     // Fetch daily entries left from Firebase
@@ -93,51 +96,30 @@ const LearningTracker = ({ user }) => {
     if (!learningInput.trim() || entriesLeft === 0) return;
 
     const newEntry = { text: learningInput, timestamp: new Date().toISOString() };
-    await saveLearningEntry(user.uid, newEntry);
+    
+    try {
+      // Save the entry
+      await saveLearningEntry(user.uid, newEntry);
+      
+      showAlert("Entry added successfully!");
 
-    showAlert("Entry added successfully!");
+      // Get Gemini feedback
+      await getGeminiFeedback(learningInput);
 
-    // Get Gemini feedback
-    await getGeminiFeedback(learningInput);
+      // Decrease entry count and save in Firebase
+      const todayDate = new Date().toDateString();
+      const newEntriesLeft = entriesLeft - 1;
+      await set(ref(database, `users/${user.uid}/dailyEntries`), {
+          date: todayDate,
+          entriesLeft: newEntriesLeft
+      });
 
-    // Update streak
-    const updatedStats = { ...userStats };
-    const lastEntryDate = learningHistory.length > 0 
-        ? new Date(learningHistory[learningHistory.length - 1].timestamp).toDateString() 
-        : null;
-    const todayDate = new Date().toDateString();
-
-    if (lastEntryDate !== todayDate) {
-        updatedStats.streak += 1;
+      setEntriesLeft(newEntriesLeft);
+      setLearningInput("");
+    } catch (error) {
+      console.error("Error submitting learning entry:", error);
+      showAlert("Failed to save entry. Please try again.");
     }
-
-    if (updatedStats.streak > updatedStats.longestStreak) {
-        updatedStats.longestStreak = updatedStats.streak;
-    }
-
-    updatedStats.totalPoints += 10;
-    updatedStats.progress += 10;
-    if (updatedStats.progress >= 100) {
-        updatedStats.level += 1;
-        updatedStats.progress = 0;
-    }
-
-    updatedStats.achievements.firstEntry = true;
-    if (updatedStats.streak >= 7) updatedStats.achievements.streakMaster = true;
-    if (updatedStats.level >= 5) updatedStats.achievements.knowledgeSeeker = true;
-    if (learningHistory.length + 1 >= 50) updatedStats.achievements.dedicatedLearner = true;
-
-    await saveUserStats(user.uid, updatedStats);
-
-    // Decrease entry count and save in Firebase
-    const newEntriesLeft = entriesLeft - 1;
-    await set(ref(database, `users/${user.uid}/dailyEntries`), {
-        date: todayDate,
-        entriesLeft: newEntriesLeft
-    });
-
-    setEntriesLeft(newEntriesLeft);
-    setLearningInput("");
   };
 
   return (
@@ -162,7 +144,7 @@ const LearningTracker = ({ user }) => {
           <p>{entriesLeft} entries left today</p>
         </div>
         
-        {/* New Gemini AI Feedback Section */}
+        {/* AI Feedback Section */}
         {(isLoadingGemini || geminiResponse) && (
           <div className="ai-feedback cyber-notification">
             <h3>AI Learning Coach</h3>
@@ -186,7 +168,7 @@ const LearningTracker = ({ user }) => {
           <h3>Achievements</h3>
           <div
             className={`achievement ${
-              userStats.achievements.firstEntry ? "achieved" : ""
+              userStats.achievements?.firstEntry ? "achieved" : ""
             }`}
           >
             <h3>First Entry</h3>
@@ -194,7 +176,7 @@ const LearningTracker = ({ user }) => {
           </div>
           <div
             className={`achievement ${
-              userStats.achievements.streakMaster ? "achieved" : ""
+              userStats.achievements?.streakMaster ? "achieved" : ""
             }`}
           >
             <h3>Streak Master</h3>
@@ -202,7 +184,7 @@ const LearningTracker = ({ user }) => {
           </div>
           <div
             className={`achievement ${
-              userStats.achievements.knowledgeSeeker ? "achieved" : ""
+              userStats.achievements?.knowledgeSeeker ? "achieved" : ""
             }`}
           >
             <h3>Knowledge Seeker</h3>
@@ -210,7 +192,7 @@ const LearningTracker = ({ user }) => {
           </div>
           <div
             className={`achievement ${
-              userStats.achievements.dedicatedLearner ? "achieved" : ""
+              userStats.achievements?.dedicatedLearner ? "achieved" : ""
             }`}
           >
             <h3>Dedicated Learner</h3>
@@ -219,13 +201,17 @@ const LearningTracker = ({ user }) => {
         </div>
         <div className="learning-history cyber-notification">
           <h3>Learning History</h3>
-          {learningHistory.map((entry, index) => (
-            <div key={index} className="entry">
-              <p>{new Date(entry.timestamp).toLocaleDateString()}</p>
-              <p>{entry.text}</p>
-              <p>{new Date(entry.timestamp).toLocaleTimeString()}</p>
-            </div>
-          ))}
+          {learningHistory.length > 0 ? (
+            learningHistory.map((entry, index) => (
+              <div key={index} className="entry">
+                <p>{new Date(entry.timestamp).toLocaleDateString()}</p>
+                <p>{entry.text}</p>
+                <p>{new Date(entry.timestamp).toLocaleTimeString()}</p>
+              </div>
+            ))
+          ) : (
+            <p>No entries yet. Start recording what you've learned!</p>
+          )}
         </div>
         <LogoutButton />
         <Alert message={alertText} />

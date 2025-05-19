@@ -5,7 +5,7 @@ import { auth } from "../firebase";
 const Leaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("points"); // Default sort by points
+  const [filter, setFilter] = useState("totalPoints"); // Default sort by points
   const currentUser = auth.currentUser;
 
   useEffect(() => {
@@ -20,28 +20,20 @@ const Leaderboard = () => {
           if (data) {
             // Transform data into array format suitable for leaderboard
             const usersArray = Object.entries(data).map(([userId, userData]) => {
-              // Extract email from userId (reverse the sanitization)
-              const email = userId.replace(/_/g, ".").replace(/_(.*?)_/g, "@$1.");
-              
-              // Default values in case stats are missing
-              const points = userData.stats?.totalPoints || 0;
-              const streak = userData.stats?.streak || 0;
-              const level = userData.stats?.level || 1;
-              const entriesCount = userData.entries ? Object.keys(userData.entries).length : 0;
-              
-              // Get user display name or use email
-              const displayName = userData.profile?.displayName || email.split('@')[0];
-              const photoURL = userData.profile?.photoURL || null;
+              // Get profile data
+              const profile = userData.profile || {};
+              // Get stats data
+              const stats = userData.stats || {};
               
               return {
                 userId,
-                email,
-                displayName,
-                photoURL,
-                points,
-                streak,
-                level,
-                entriesCount
+                displayName: profile.displayName || "Unknown User",
+                photoURL: profile.photoURL || null,
+                email: profile.email || null,
+                totalPoints: stats.totalPoints || 0,
+                streak: stats.streak || 0,
+                level: stats.level || 1,
+                entriesCount: stats.entriesCount || 0
               };
             });
             
@@ -62,10 +54,10 @@ const Leaderboard = () => {
 
   // Sort the leaderboard data based on the selected filter
   const sortedData = [...leaderboardData].sort((a, b) => {
-    if (filter === "points") return b.points - a.points;
+    if (filter === "totalPoints") return b.totalPoints - a.totalPoints;
     if (filter === "streak") return b.streak - a.streak;
     if (filter === "level") return b.level - a.level;
-    if (filter === "entries") return b.entriesCount - a.entriesCount;
+    if (filter === "entriesCount") return b.entriesCount - a.entriesCount;
     return 0;
   });
 
@@ -73,8 +65,7 @@ const Leaderboard = () => {
   const getCurrentUserRank = () => {
     if (!currentUser) return null;
     
-    const currentUserEmail = currentUser.email;
-    const userIndex = sortedData.findIndex(user => user.email === currentUserEmail);
+    const userIndex = sortedData.findIndex(user => user.userId === currentUser.uid);
     
     if (userIndex === -1) return null;
     return {
@@ -97,8 +88,8 @@ const Leaderboard = () => {
           <p>Sort by:</p>
           <div className="filter-buttons">
             <button 
-              className={filter === "points" ? "active-button" : ""} 
-              onClick={() => setFilter("points")}
+              className={filter === "totalPoints" ? "active-button" : ""} 
+              onClick={() => setFilter("totalPoints")}
             >
               Points
             </button>
@@ -115,8 +106,8 @@ const Leaderboard = () => {
               Level
             </button>
             <button 
-              className={filter === "entries" ? "active-button" : ""} 
-              onClick={() => setFilter("entries")}
+              className={filter === "entriesCount" ? "active-button" : ""} 
+              onClick={() => setFilter("entriesCount")}
             >
               Activities
             </button>
@@ -141,16 +132,16 @@ const Leaderboard = () => {
               <div className="rank-column">Rank</div>
               <div className="user-column">User</div>
               <div className="stats-column">
-                {filter === "points" && "Points"}
+                {filter === "totalPoints" && "Points"}
                 {filter === "streak" && "Streak"}
                 {filter === "level" && "Level"}
-                {filter === "entries" && "Activities"}
+                {filter === "entriesCount" && "Activities"}
               </div>
             </div>
 
             {sortedData.length > 0 ? (
               sortedData.map((user, index) => {
-                const isCurrentUser = currentUser && user.email === currentUser.email;
+                const isCurrentUser = currentUser && user.userId === currentUser.uid;
                 return (
                   <div 
                     key={user.userId} 
@@ -173,8 +164,8 @@ const Leaderboard = () => {
                       <span className="user-name">{user.displayName}</span>
                     </div>
                     <div className="stats-column">
-                      {filter === "points" && (
-                        <span>{user.points} pts</span>
+                      {filter === "totalPoints" && (
+                        <span>{user.totalPoints} pts</span>
                       )}
                       {filter === "streak" && (
                         <span>{user.streak} days 🔥</span>
@@ -182,7 +173,7 @@ const Leaderboard = () => {
                       {filter === "level" && (
                         <span>Level {user.level}</span>
                       )}
-                      {filter === "entries" && (
+                      {filter === "entriesCount" && (
                         <span>{user.entriesCount} activities</span>
                       )}
                     </div>
